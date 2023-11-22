@@ -3,7 +3,6 @@ import { useState } from "react";
 import { FileInput, Label, Button } from 'flowbite-react';
 import * as HashUtils from './Utils/hash';
 import { removeSensitiveInfo } from './Utils/removeInfo';
-import { decodeValue } from './Utils/decoder';
 import { HarParam } from './Utils/hash';
 function App() {
 
@@ -45,36 +44,58 @@ function App() {
 
   function addToUniqueCookies<T>(cookies: HarParam<T>[]) {
     for(let i in cookies) {
-      sanitizeList.cookies.push(cookies[i].name);
+      if(!sanitizeList.cookies.includes(cookies[i].name)) {
+        sanitizeList.cookies.push(cookies[i].name);
+      }
     }
   }
 
-  const removeSAMLSign = (value:any) => {
-    const decodedSAML = decodeValue(value);
-    console.log(decodedSAML);
-  //  const SignRemovedSAML = 
+  function addToUniqueHeaders<T>(headers: HarParam<T>[]) {
+    for(let i in headers) {
+      if(!sanitizeList.headers.includes(headers[i].name)) {
+        sanitizeList.headers.push(headers[i].name);
+      }
+    }
   }
 
+  function addToUniquePostData<T>(postData: HarParam<T>[]) {
+    for(let i in postData) {
+      if(!sanitizeList.postData.includes(postData[i].name)) {
+        sanitizeList.postData.push(postData[i].name);
+      }
+    }
+  }
 
+  function addToUniqueQueryStringParams<T>(queryStringParams: HarParam<T>[]) {
+    for(let i in queryStringParams) {
+      if(!sanitizeList.queryStringParams.includes(queryStringParams[i].name)) {
+        sanitizeList.queryStringParams.push(queryStringParams[i].name);
+      }
+    }
+  }
 
   const sanitizeSensitiveInfo = (harcontent:any) => {
     const entries = harcontent.log.entries;
     const pages = harcontent.log.pages;
     for(let i in entries) {
       let request = entries[i].request;
+      addToUniqueCookies(request.cookies);
+      addToUniqueHeaders(request.headers);
+      console.log("request no: "+i);
       const sanitizedReqHeaderCookies = HashUtils.hashHeaderCookies(request.headers);
-      console.log("in main" +request.headers);
       const sanitizedReqCookies = HashUtils.hashCookies(request.cookies);
       request.headers=sanitizedReqHeaderCookies;
       request.cookies=sanitizedReqCookies;
       if(request.postData) {
         console.log(request.postData.toString());
+        addToUniquePostData(request.postData.params);
         const sanitizedReqpostDataText = removeSensitiveInfo(request.postData.text);
         const sanitizedReqPostDataParams = HashUtils.hashPostQueryParams(request.postData.params);
         request.postData.text=sanitizedReqpostDataText;
         request.postData.params=sanitizedReqPostDataParams;
       }
       if(request.queryString.length != 0) {
+        addToUniqueQueryStringParams(request.queryString);
         const sanitizedQueryStringCodeParam = HashUtils.hashQueryStringparams(request.queryString);
         request.queryString = sanitizedQueryStringCodeParam;
       }
@@ -85,6 +106,8 @@ function App() {
       }
 
       let response = entries[i].response;
+      addToUniqueCookies(response.headers);
+      addToUniqueHeaders(response.headers);
       const sanitizedRespHeaderCookies = HashUtils.hashHeaderCookies(response.headers);
       const sanitizedRespCookies = HashUtils.hashCookies(response.cookies);
       response.headers=sanitizedRespHeaderCookies;
@@ -97,6 +120,11 @@ function App() {
         pages[i].title=sanitizedIDtokenPageTitle;
       }
     }
+//     console.log(sanitizeList.queryStringParams.toString());
+//     console.log(sanitizeList.postData.toString());
+//     console.log(sanitizeList.cookies.toString());
+//     console.log(sanitizeList.headers.toString());
+    
     harcontent.log.entries=entries;
     harcontent.log.pages=pages;
     return harcontent;

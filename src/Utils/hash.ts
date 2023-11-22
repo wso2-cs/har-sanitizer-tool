@@ -1,7 +1,6 @@
-import { Type } from "typescript";
 import sha256 from "fast-sha256";
 
-interface Object<Type> {
+export interface HarParam <T> {
     name: string;
     value: string;
 }
@@ -19,21 +18,18 @@ export const hashValue = (hashValue: string) => {
     return hashed;
 }
 
-export const hashCookies = (cookies: Object<Type>[]) => {
-
+export function hashCookies<T>(cookies: HarParam<T>[]): HarParam<T>[]{
     for (var i in cookies) {
         var hashed = hashValue(cookies[i].value);
         cookies[i].value = "Hashed: " + hashed;
     }
-
     return cookies;
-};
+}
 
-
-export const hashHeaderCookies = (headers: Object<Type>[]): any => {
+export function hashHeaderCookies<T>(headers: HarParam<T>[]): HarParam<T>[] {
 
     for (let i in headers) {
-        console.log(headers[i]);
+       // console.log(headers[i]);
         if (headers[i].name == "Cookie" || headers[i].name == "Set-Cookie") {
             const array = headers[i].value.split(';');
             for (let i in array) {
@@ -46,23 +42,24 @@ export const hashHeaderCookies = (headers: Object<Type>[]): any => {
         } else if (headers[i].name == "Authorization") {
             const authorizationValue = headers[i].value.split(" ");
             const token = authorizationValue[1];
-            console.log(token);
+          //  console.log(token);
             if (token.includes(".")) {
                 authorizationValue[1] = token.substring(0, token.lastIndexOf("."));
-                console.log(authorizationValue[1]);
+                //console.log(authorizationValue[1]);
                 headers[i].value = authorizationValue.join(" SignRemoved:");
-                console.log(headers[i].value);
+                //console.log(headers[i].value);
             } else {
                 authorizationValue[1] = hashValue(token);
                 headers[i].value = authorizationValue.join(" Hashed:");
             }
         }
     }
-    console.log(headers);
+    //  console.log(headers);
     return headers;
 };
 
-export const hashPostQueryParams = (postDataParams: Object<Type>[]) => {
+export function hashPostQueryParams<T>(postDataParams: HarParam<T>[]): HarParam<T>[] {
+
     //var postDataParams = harcontent.log.entries[63].request.postData.params;
     for (let i in postDataParams) {
         if (postDataParams[i].name == "code") {
@@ -72,11 +69,14 @@ export const hashPostQueryParams = (postDataParams: Object<Type>[]) => {
     return postDataParams;
 }
 
-export const hashQueryStringparams = (queryStringParams: Object<Type>[]) => {
+export function hashQueryStringparams<T>(queryStringParams: HarParam<T>[]): HarParam<T>[] {
+
     for (let i in queryStringParams) {
         if (queryStringParams[i].name == "code") {
             queryStringParams[i].value = " Hashed: " + hashValue(queryStringParams[i].value);
-        }
+        } else if(queryStringParams[i].name == "id_token_hint") {
+            queryStringParams[i].value = "Signature Removed:" + queryStringParams[i].value.substring(0, queryStringParams[i].value.lastIndexOf("."));
+        }   
     }
     return queryStringParams;
 }
@@ -85,12 +85,12 @@ export const hashIdToken = (idToken: string) => {
 
     var baseurl = idToken.substring(0, idToken.indexOf("?"));
     var urlparams = idToken.substring(idToken.indexOf("?") + 1, idToken.length).split("&");
-    console.log(urlparams);
+   // console.log(urlparams);
     for (let i in urlparams) {
         var props = urlparams[i].split("=");
         if (props[0] == "id_token_hint") {
             const token = props[1];
-            console.log(token);
+           // console.log(token);
             if (token.includes(".")) {
                 props[1] = "Signature Removed:" + token.substring(0, token.lastIndexOf("."));
             }

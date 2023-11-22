@@ -1,4 +1,5 @@
 import sha256 from "fast-sha256";
+import { getSignatureRemovedSamlAssertion } from "./decoder";
 
 export interface HarParam <T> {
     name: string;
@@ -29,7 +30,6 @@ export function hashCookies<T>(cookies: HarParam<T>[]): HarParam<T>[]{
 export function hashHeaderCookies<T>(headers: HarParam<T>[]): HarParam<T>[] {
 
     for (let i in headers) {
-       // console.log(headers[i]);
         if (headers[i].name == "Cookie" || headers[i].name == "Set-Cookie") {
             const array = headers[i].value.split(';');
             for (let i in array) {
@@ -54,7 +54,6 @@ export function hashHeaderCookies<T>(headers: HarParam<T>[]): HarParam<T>[] {
             }
         }
     }
-    //  console.log(headers);
     return headers;
 };
 
@@ -64,6 +63,9 @@ export function hashPostQueryParams<T>(postDataParams: HarParam<T>[]): HarParam<
     for (let i in postDataParams) {
         if (postDataParams[i].name == "code") {
             postDataParams[i].value = " Hashed:" + hashValue(postDataParams[i].value);
+        } else if (postDataParams[i].name == "SAMLRequest") {
+            const signatureRemovedSamlAssertion=getSignatureRemovedSamlAssertion(postDataParams[i].value).toString();
+            postDataParams[i].value = "signatureValueRemoved:" + signatureRemovedSamlAssertion;
         }
     }
     return postDataParams;

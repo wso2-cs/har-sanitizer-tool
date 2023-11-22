@@ -1,15 +1,27 @@
-
-export const decodeValue = (encodeValue: string) => {
+const decodeValue = (encodeValue: string) => {
     const uridecodedValue=decodeURIComponent(encodeValue);
-
-    const decodedSAML = atob(uridecodedValue);
-    return decodedSAML;
+    return atob(uridecodedValue);
 }
 
-export const encodeValue = (decodeValue: string) => {
-    return encodeValue;
+const uriEncodeValue = (samlSignatureRemovedValue: string) => {
+    const encodedValue = btoa(samlSignatureRemovedValue);
+    return encodeURIComponent(encodedValue);
 }
 
-const removeSAMLSign = (value:any) => {
-    const decodedSAML = decodeValue(value);
+const removeSAMLSign = (samlAssertion: string): string => {
+    
+    const signatureValueStart = "<ds:SignatureValue>";
+    const signatureValueEnd = "</ds:SignatureValue>";
+    const decodedValue = decodeValue(samlAssertion);
+    // console.log(decodedValue);
+    const removeSAMLSignature=decodedValue.substring(0,decodedValue.indexOf(signatureValueStart))
+    + decodedValue.substring(decodedValue.indexOf(signatureValueEnd)+ signatureValueEnd.length, decodedValue.length);
+    return removeSAMLSignature;
+}
+
+export const getSignatureRemovedSamlAssertion = (samlAssertion:string): string =>{
+
+    const samlSignatureRemovedValue=removeSAMLSign(samlAssertion);
+    const encodedSignRemovedSAML = uriEncodeValue(samlSignatureRemovedValue);
+    return encodedSignRemovedSAML;
 }

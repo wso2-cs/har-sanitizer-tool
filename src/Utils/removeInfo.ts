@@ -1,5 +1,6 @@
-import { decodeValue } from "./decoder";
+import { getSignatureRemovedSamlAssertion } from "./decoder";
 import { hashValue } from "./hash";
+
 export const removeSensitiveInfo = (postDataText:string) => {
   try {
     console.log(postDataText.toString());
@@ -12,7 +13,9 @@ export const removeSensitiveInfo = (postDataText:string) => {
       } else if (paramData[0] == "code") {
         paramData[1] = "Hashed:" + hashValue(paramData[1]);
       } else if(paramData[0] == "SAMLRequest") {
-        console.log(decodeValue(paramData[1]));
+        const signatureRemovedSamlAssertion=getSignatureRemovedSamlAssertion(paramData[1]).toString();
+        paramData[1] = "signatureValueRemoved:" + signatureRemovedSamlAssertion;
+        
       }
       postDataParams[i] = paramData.join("=");
       console.log(postDataParams[i]);
@@ -23,3 +26,5 @@ export const removeSensitiveInfo = (postDataText:string) => {
   }
     
   }
+
+

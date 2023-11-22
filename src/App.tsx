@@ -1,17 +1,22 @@
-import React from 'react';
-import logo from './logo.svg';
 import './App.css';
 import { useState } from "react";
-import sha256 from "fast-sha256";
 import { FileInput, Label, Button } from 'flowbite-react';
 import * as HashUtils from './Utils/hash';
 import { removeSensitiveInfo } from './Utils/removeInfo';
-
+import { decodeValue } from './Utils/decoder';
+import { HarParam } from './Utils/hash';
 function App() {
 
   const fileReader = new FileReader();
   const [jsonHar, setJsonHar] = useState<string>();
   const [harError, setHarError] = useState<string>("");
+  const sanitizeList = {
+    "cookies": [] as string[],
+    "headers": [] as string[],
+    "postData": [] as string[],
+    "queryStringParams": [] as string[] 
+  }
+
 
   const handleFileChosen = (file:any) => {
     fileReader.onloadend = handleFileRead;
@@ -37,6 +42,20 @@ function App() {
       setHarError(`Invalid har file: ${e?.  toString()}`);
     }
   }
+
+  function addToUniqueCookies<T>(cookies: HarParam<T>[]) {
+    for(let i in cookies) {
+      sanitizeList.cookies.push(cookies[i].name);
+    }
+  }
+
+  const removeSAMLSign = (value:any) => {
+    const decodedSAML = decodeValue(value);
+    console.log(decodedSAML);
+  //  const SignRemovedSAML = 
+  }
+
+
 
   const sanitizeSensitiveInfo = (harcontent:any) => {
     const entries = harcontent.log.entries;
@@ -78,7 +97,6 @@ function App() {
         pages[i].title=sanitizedIDtokenPageTitle;
       }
     }
-
     harcontent.log.entries=entries;
     harcontent.log.pages=pages;
     return harcontent;
@@ -107,7 +125,8 @@ function App() {
     <div className="flex flex-col max-w-2xl mx-auto">
       <div id="fileUpload">
       <FileInput id="file" helperText="Upload the HAR File for sanitization"  onChange={(e) => handleFileChosen(e.target.files instanceof FileList
-              ? e.target.files[0] : harError)} />        {harError && <p className="mt-2 text-sm text-red-600 dark:text-red-500">{harError}</p>}
+              ? e.target.files[0] : harError)} />        
+              {harError && <p className="mt-2 text-sm text-red-600 dark:text-red-500">{harError}</p>}
       </div>
       <div className="self-end">
       {jsonHar ? <button type="button" className="object-right text-white bg-gray-800 hover:bg-gray-900 focus:outline-none focus:ring-4 focus:ring-gray-300 font-medium rounded-lg text-sm px-5 py-2.5 mb-2 dark:bg-gray-800 dark:hover:bg-gray-700 dark:focus:ring-gray-700 dark:border-gray-700"

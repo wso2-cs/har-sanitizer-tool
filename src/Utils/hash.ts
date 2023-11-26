@@ -1,7 +1,7 @@
 import sha256 from "fast-sha256";
 import { getSignatureRemovedSamlAssertion } from "./decoder";
 
-export interface HarParam <T> {
+export interface HarParam  {
     name: string;
     value: string;
 }
@@ -19,7 +19,7 @@ export const hashValue = (hashValue: string) => {
     return hashed;
 }
 
-export function hashCookies<T>(cookies: HarParam<T>[]): HarParam<T>[]{
+export function hashCookies<T>(cookies: HarParam[]): HarParam[]{
     for (var i in cookies) {
         var hashed = hashValue(cookies[i].value);
         cookies[i].value = "Hashed: " + hashed;
@@ -27,7 +27,7 @@ export function hashCookies<T>(cookies: HarParam<T>[]): HarParam<T>[]{
     return cookies;
 }
 
-export function hashHeaderCookies<T>(headers: HarParam<T>[]): HarParam<T>[] {
+export function hashHeaderCookies<T>(headers: HarParam[]): HarParam[] {
 
     for (let i in headers) {
         if (headers[i].name == "Cookie" || headers[i].name == "Set-Cookie") {
@@ -57,7 +57,7 @@ export function hashHeaderCookies<T>(headers: HarParam<T>[]): HarParam<T>[] {
     return headers;
 };
 
-export function hashPostQueryParams<T>(postDataParams: HarParam<T>[]): HarParam<T>[] {
+export function hashPostQueryParams(postDataParams: HarParam[]): HarParam[] {
 
     //var postDataParams = harcontent.log.entries[63].request.postData.params;
     for (let i in postDataParams) {
@@ -71,7 +71,7 @@ export function hashPostQueryParams<T>(postDataParams: HarParam<T>[]): HarParam<
     return postDataParams;
 }
 
-export function hashQueryStringparams<T>(queryStringParams: HarParam<T>[]): HarParam<T>[] {
+export function hashQueryStringparams<T>(queryStringParams: HarParam[]): HarParam[] {
 
     for (let i in queryStringParams) {
         if (queryStringParams[i].name == "code") {

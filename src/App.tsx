@@ -2,15 +2,22 @@ import "./App.css";
 import { useState } from "react";
 import { FileInput } from "flowbite-react";
 import * as HashUtils from "./Utils/hash";
-import { removeSensitiveInfo } from "./Utils/removeInfo";
+import { removeCookies, removeHashSensitiveInfoText } from "./Utils/removeInfo";
 import { HarParam } from "./Utils/hash";
 import { SanitizeSelector } from "./SanitizingSelector";
 
-export type SanitizeState = Record<string, Record<string, boolean>>;
+export interface SanitizeOption {
+	hashEnabled: boolean;
+	removalEnabled: boolean;
+}
+
+export type SanitizeState = Record<
+	string,
+	{ sanitizeOption: SanitizeOption; sanitizeList: Record<string, boolean> }
+>;
+
 export const defaultSensitiveInfoList = [
 	"Authorization",
-	"SAMLRequest",
-	"SAMLResponse",
 	"access_token",
 	"appID",
 	"assertion",
@@ -18,7 +25,6 @@ export const defaultSensitiveInfoList = [
 	"email",
 	"id_token",
 	"password",
-	"id_token_hint",
 	"commonAuthId",
 	"opbs",
 	"JSESSIONID",
@@ -33,12 +39,28 @@ function App() {
 	const [jsonHar, setJsonHar] = useState<string>();
 	const [downloadJsonHar, setdownloadJsonHarJsonHar] = useState<any>();
 
+	const [sanitizeTypeStatus, setSanitizeTypeStatus] =
+		useState<SanitizeOption>();
+
 	const [harError, setHarError] = useState<string>("");
+
 	const defaultSanitizeList: SanitizeState = {
-		cookies: {},
-		headers: {},
-		postData: {},
-		queryStringParams: {},
+		cookies: {
+			sanitizeOption: { hashEnabled: true, removalEnabled: false },
+			sanitizeList: {},
+		},
+		headers: {
+			sanitizeOption: { hashEnabled: true, removalEnabled: false },
+			sanitizeList: {},
+		},
+		postData: {
+			sanitizeOption: { hashEnabled: false, removalEnabled: true },
+			sanitizeList: {},
+		},
+		queryStringParams: {
+			sanitizeOption: { hashEnabled: false, removalEnabled: true },
+			sanitizeList: {},
+		},
 	};
 
 	const [sanitizeList, setSanitizeList] =
@@ -120,13 +142,12 @@ function App() {
 		const sanitizeItems = getHarParamsArr(harcontent);
 		const output = { ...defaultSanitizeList };
 		Object.entries(sanitizeItems).map(([key, items]: [string, string[]]) => {
-			output[key] = items.reduce((acc, curr) => {
+			output[key].sanitizeList = items.reduce((acc, curr) => {
 				if (!curr) return acc;
 				acc[curr] = defaultSelectedSanitizeList.includes(curr);
 				return acc;
 			}, {} as Record<string, boolean>);
 		});
-		console.log(output);
 		return output;
 	}
 
@@ -135,64 +156,96 @@ function App() {
 		console.log(sanitizedOutput);
 		const entries = harcontent.log.entries;
 		const pages = harcontent.log.pages;
+
 		for (let entry in entries) {
 			let request = entries[entry].request;
-			console.log(request.cookies);
-			const sanitizedReqHeaders = HashUtils.hashHeaders(
+			let response = entries[entry].response;
+
+			let sanitizedReqCookies;
+			let sanitizedReqHeaders;
+			let sanitizedReqpostDataText;
+			let sanitizedReqPostDataParams;
+			let sanitizedQueryStringCodeParam;
+			let sanitizedRespHeaders;
+			let sanitizedRespCookies;
+
+			sanitizedReqHeaders = HashUtils.hashRemoveHeaders(
 				request.headers,
-				sanitizeList.headers
+				sanitizeList.headers.sanitizeList,
+				sanitizeList.headers.sanitizeOption.hashEnabled
 			);
-			const sanitizedReqCookies = HashUtils.hashCookies(
-				request.cookies,
-				sanitizeList.cookies
+
+			sanitizedRespHeaders = HashUtils.hashRemoveHeaders(
+				response.headers,
+				sanitizeList.headers.sanitizeList,
+				sanitizeList.headers.sanitizeOption.hashEnabled
 			);
-			request.headers = sanitizedReqHeaders;
+
+			if (sanitizeList.cookies.sanitizeOption.hashEnabled) {
+				sanitizedReqCookies = HashUtils.hashCookies(
+					request.cookies,
+					sanitizeList.cookies.sanitizeList
+				);
+				sanitizedRespCookies = HashUtils.hashCookies(
+					response.cookies,
+					sanitizeList.cookies.sanitizeList
+				);
+			} else {
+				sanitizedReqCookies = removeCookies(
+					request.cookies,
+					sanitizeList.cookies.sanitizeList
+				);
+				sanitizedRespCookies = removeCookies(
+					response.cookies,
+					sanitizeList.cookies.sanitizeList
+				);
+			}
 			request.cookies = sanitizedReqCookies;
+			response.cookies = sanitizedRespCookies;
+			request.headers = sanitizedReqHeaders;
+			response.headers = sanitizedRespHeaders;
+
 			if (request.postData) {
-				const sanitizedReqpostDataText = removeSensitiveInfo(
+				sanitizedReqpostDataText = removeHashSensitiveInfoText(
 					request.postData.text,
-					sanitizeList.postData
+					sanitizeList.postData.sanitizeList,
+					sanitizeList.postData.sanitizeOption.removalEnabled
 				);
-				const sanitizedReqPostDataParams = HashUtils.hashPostQueryParams(
+
+				sanitizedReqPostDataParams = HashUtils.hashRemovePostQueryParams(
 					request.postData.params,
-					sanitizeList.postData
+					sanitizeList.postData.sanitizeList,
+					sanitizeList.postData.sanitizeOption.hashEnabled
 				);
+
 				request.postData.text = sanitizedReqpostDataText;
 				request.postData.params = sanitizedReqPostDataParams;
 			}
 
 			if (request.queryString.length != 0) {
-				const sanitizedQueryStringCodeParam = HashUtils.hashQueryStringparams(
+				sanitizedQueryStringCodeParam = HashUtils.hashRemovePostQueryParams(
 					request.queryString,
-					sanitizeList.queryStringParams
+					sanitizeList.queryStringParams.sanitizeList,
+					sanitizeList.queryStringParams.sanitizeOption.hashEnabled
 				);
 				request.queryString = sanitizedQueryStringCodeParam;
 			}
 
 			if (request.url.includes("id_token_hint")) {
-				const sanitizedReqUrlWithIDToken = HashUtils.hashIdToken(
+				const sanitizedReqUrlWithIDToken = HashUtils.hashRemoveUrlParams(
 					request.url,
-					sanitizeList.queryStringParams
+					sanitizeList.queryStringParams.sanitizeList,
+					sanitizeList.queryStringParams.sanitizeOption.hashEnabled
 				);
 				request.url = sanitizedReqUrlWithIDToken;
 			}
-			let response = entries[entry].response;
-			const sanitizedRespHeaders = HashUtils.hashHeaders(
-				response.headers,
-				sanitizeList.headers
-			);
-			const sanitizedRespCookies = HashUtils.hashCookies(
-				response.cookies,
-				sanitizeList.cookies
-			);
-			response.headers = sanitizedRespHeaders;
-			response.cookies = sanitizedRespCookies;
 		}
 		for (let i in pages) {
 			if (pages[i].title.includes("id_token_hint")) {
-				const sanitizedIDtokenPageTitle = HashUtils.hashIdToken(
+				const sanitizedIDtokenPageTitle = HashUtils.hashRemoveUrlParams(
 					pages[i].title,
-					sanitizeList.queryStringParams
+					sanitizeList.queryStringParams.sanitizeList,
+					sanitizeList.queryStringParams.sanitizeOption.hashEnabled
 				);
 				pages[i].title = sanitizedIDtokenPageTitle;
 			}
@@ -266,6 +319,7 @@ function App() {
 				<SanitizeSelector
 					sanitizeItems={sanitizeList}
 					setSanitizeItems={setSanitizeList}
+					jsonHar={jsonHar}
 				></SanitizeSelector>
 			</div>
 		</div>

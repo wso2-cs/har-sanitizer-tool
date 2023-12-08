@@ -9,18 +9,15 @@ const uriEncodeValue = (samlSignatureRemovedValue: string) => {
 }
 
 const removeSAMLSign = (samlAssertion: string): string => {
-
 	const signatureValueStart = "<ds:SignatureValue>";
 	const signatureValueEnd = "</ds:SignatureValue>";
 	const decodedValue = decodeValue(samlAssertion);
-	// console.log(decodedValue);
 	const removeSAMLSignature = decodedValue.substring(0, decodedValue.indexOf(signatureValueStart))
 		+ decodedValue.substring(decodedValue.indexOf(signatureValueEnd) + signatureValueEnd.length, decodedValue.length);
 	return removeSAMLSignature;
 }
 
 export const getSignatureRemovedSamlAssertion = (samlAssertion: string): string => {
-
 	const samlSignatureRemovedValue = removeSAMLSign(samlAssertion);
 	const encodedSignRemovedSAML = uriEncodeValue(samlSignatureRemovedValue);
 	return encodedSignRemovedSAML;

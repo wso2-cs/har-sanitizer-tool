@@ -5,6 +5,7 @@ import { HarParam, hashValue } from "./hash";
 export const removeHashSensitiveInfoText = (
 	postDataText: string,
 	selectedPostData: Record<string, boolean>,
+	isHashEnabled:boolean,
 	isRemovalEnabled: boolean
 ) => {
 	try {
@@ -26,7 +27,7 @@ export const removeHashSensitiveInfoText = (
 						} else {
 							if (isRemovalEnabled) {
 								paramData[1] = "[HAR_SANITIZER:REMOVED]";
-							} else {
+							} else if(isHashEnabled) {
 								paramData[1] = "Hashed:" + hashValue(paramData[1]);
 							}
 						}

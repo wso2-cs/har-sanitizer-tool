@@ -40,6 +40,7 @@ export const defaultSelectedSanitizeList = [...defaultSensitiveInfoList];
 
 function App() {
 	const fileReader = new FileReader();
+	const [fileName, setFileName] = useState<string>();
 	const [jsonHar, setJsonHar] = useState<string>();
 	const [downloadJsonHar, setdownloadJsonHarJsonHar] = useState<any>();
 	const [harError, setHarError] = useState<string>("");
@@ -68,9 +69,9 @@ function App() {
 
 	const handleFileChosen = (file: any) => {
 		try {
+			setFileName(file.name);
 			fileReader.onloadend = handleFileRead;
 			fileReader.readAsText(file);
-			throw new Error("File Upload failed");
 		} catch (e) {
 			setJsonHar('');
 			setSanitizeList({});
@@ -284,7 +285,7 @@ function App() {
 			type: "application/json",
 		});
 		element.href = URL.createObjectURL(file);
-		element.download = "myFile.har";
+		element.download = "sanitized_"+fileName;
 		document.body.appendChild(element);
 		element.click();
 		// clean up "a" element & remove ObjectURL

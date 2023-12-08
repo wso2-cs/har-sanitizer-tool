@@ -30,6 +30,10 @@ export const defaultSensitiveInfoList = [
 	"JSESSIONID",
 	"Set-Cookie",
 	"Cookie",
+	"id_token_hint",
+	"SAMLRequest",
+	"SAMLResponse",
+	"Location"
 ];
 
 export const defaultSelectedSanitizeList = [...defaultSensitiveInfoList];
@@ -38,10 +42,6 @@ function App() {
 	const fileReader = new FileReader();
 	const [jsonHar, setJsonHar] = useState<string>();
 	const [downloadJsonHar, setdownloadJsonHarJsonHar] = useState<any>();
-
-	const [sanitizeTypeStatus, setSanitizeTypeStatus] =
-		useState<SanitizeOption>();
-
 	const [harError, setHarError] = useState<string>("");
 
 	const defaultSanitizeList: SanitizeState = {
@@ -67,14 +67,20 @@ function App() {
 		useState<SanitizeState>(defaultSanitizeList);
 
 	const handleFileChosen = (file: any) => {
-		fileReader.onloadend = handleFileRead;
-		fileReader.readAsText(file);
+		try {
+			fileReader.onloadend = handleFileRead;
+			fileReader.readAsText(file);
+			throw new Error("File Upload failed");
+		} catch (e) {
+			setJsonHar('');
+			setSanitizeList({});
+			setHarError(`Please select a HAR File`);
+		}
 	};
 
 	const handleFileRead = (e: any) => {
 		try {
 			const content = fileReader.result;
-			console.log(content);
 			if (
 				content &&
 				(typeof content === "string" || content instanceof String)
@@ -89,7 +95,9 @@ function App() {
 			throw new Error("File Upload failed");
 		} catch (e) {
 			console.log(e);
-			setHarError(`Invalid har file: ${e?.toString()}`);
+			setJsonHar('');
+			setSanitizeList({});
+			setHarError(`Invalid har file`);
 		}
 	};
 
@@ -144,7 +152,11 @@ function App() {
 		Object.entries(sanitizeItems).map(([key, items]: [string, string[]]) => {
 			output[key].sanitizeList = items.reduce((acc, curr) => {
 				if (!curr) return acc;
-				acc[curr] = defaultSelectedSanitizeList.includes(curr);
+				if (key == "cookies") {
+					acc[curr] = true;
+				} else {
+					acc[curr] = defaultSelectedSanitizeList.includes(curr);
+				}
 				return acc;
 			}, {} as Record<string, boolean>);
 		});
@@ -153,106 +165,112 @@ function App() {
 
 	const sanitizeSensitiveInfo = (harcontent: any) => {
 		let sanitizedOutput = getSanitizeItems(harcontent);
-		console.log(sanitizedOutput);
 		const entries = harcontent.log.entries;
 		const pages = harcontent.log.pages;
 
 		for (let entry in entries) {
 			let request = entries[entry].request;
 			let response = entries[entry].response;
+			let initiator = entries[entry]._initiator;
 
-			let sanitizedReqCookies;
-			let sanitizedReqHeaders;
-			let sanitizedReqpostDataText;
-			let sanitizedReqPostDataParams;
-			let sanitizedQueryStringCodeParam;
-			let sanitizedRespHeaders;
-			let sanitizedRespCookies;
-
-			sanitizedReqHeaders = HashUtils.hashRemoveHeaders(
+			if (initiator.url) {
+				initiator.url = HashUtils.hashRemoveUrlParams(request.url,
+					sanitizeList.queryStringParams.sanitizeList,
+					sanitizeList.queryStringParams.sanitizeOption.hashEnabled,
+					sanitizeList.queryStringParams.sanitizeOption.removalEnabled)
+			}
+			request.headers = HashUtils.hashRemoveHeaders(
 				request.headers,
-				sanitizeList.headers.sanitizeList,
-				sanitizeList.headers.sanitizeOption.hashEnabled
+				sanitizeList,
+				sanitizeList.headers.sanitizeOption.hashEnabled,
+				sanitizeList.headers.sanitizeOption.removalEnabled
 			);
-
-			sanitizedRespHeaders = HashUtils.hashRemoveHeaders(
+			response.headers = HashUtils.hashRemoveHeaders(
 				response.headers,
-				sanitizeList.headers.sanitizeList,
-				sanitizeList.headers.sanitizeOption.hashEnabled
+				sanitizeList,
+				sanitizeList.headers.sanitizeOption.hashEnabled,
+				sanitizeList.headers.sanitizeOption.removalEnabled
+
 			);
 
 			if (sanitizeList.cookies.sanitizeOption.hashEnabled) {
-				sanitizedReqCookies = HashUtils.hashCookies(
+				request.cookies = HashUtils.hashCookies(
 					request.cookies,
 					sanitizeList.cookies.sanitizeList
 				);
-				sanitizedRespCookies = HashUtils.hashCookies(
+				response.cookies = HashUtils.hashCookies(
 					response.cookies,
 					sanitizeList.cookies.sanitizeList
 				);
 			} else {
-				sanitizedReqCookies = removeCookies(
+				request.cookies = removeCookies(
 					request.cookies,
 					sanitizeList.cookies.sanitizeList
 				);
-				sanitizedRespCookies = removeCookies(
+				response.cookies = removeCookies(
 					response.cookies,
 					sanitizeList.cookies.sanitizeList
 				);
 			}
-			request.cookies = sanitizedReqCookies;
-			response.cookies = sanitizedRespCookies;
-			request.headers = sanitizedReqHeaders;
-			response.headers = sanitizedRespHeaders;
 
 			if (request.postData) {
-				sanitizedReqpostDataText = removeHashSensitiveInfoText(
+				request.postData.text = removeHashSensitiveInfoText(
 					request.postData.text,
 					sanitizeList.postData.sanitizeList,
+					sanitizeList.postData.sanitizeOption.hashEnabled,
 					sanitizeList.postData.sanitizeOption.removalEnabled
 				);
 
-				sanitizedReqPostDataParams = HashUtils.hashRemovePostQueryParams(
+				request.postData.params = HashUtils.hashRemovePostQueryParams(
 					request.postData.params,
 					sanitizeList.postData.sanitizeList,
-					sanitizeList.postData.sanitizeOption.hashEnabled
+					sanitizeList.postData.sanitizeOption.hashEnabled,
+					sanitizeList.postData.sanitizeOption.removalEnabled
 				);
-
-				request.postData.text = sanitizedReqpostDataText;
-				request.postData.params = sanitizedReqPostDataParams;
 			}
 
 			if (request.queryString.length != 0) {
-				sanitizedQueryStringCodeParam = HashUtils.hashRemovePostQueryParams(
+				request.queryString = HashUtils.hashRemoveQueryStringparams(
 					request.queryString,
 					sanitizeList.queryStringParams.sanitizeList,
-					sanitizeList.queryStringParams.sanitizeOption.hashEnabled
+					sanitizeList.queryStringParams.sanitizeOption.hashEnabled,
+					sanitizeList.queryStringParams.sanitizeOption.removalEnabled
 				);
-				request.queryString = sanitizedQueryStringCodeParam;
 			}
 
-			if (request.url.includes("id_token_hint")) {
-				const sanitizedReqUrlWithIDToken = HashUtils.hashRemoveUrlParams(
-					request.url,
+			if (request.url) {
+				request.url = HashUtils.hashRemoveUrlParams(request.url,
 					sanitizeList.queryStringParams.sanitizeList,
-					sanitizeList.queryStringParams.sanitizeOption.hashEnabled
-				);
-				request.url = sanitizedReqUrlWithIDToken;
+					sanitizeList.queryStringParams.sanitizeOption.hashEnabled,
+					sanitizeList.queryStringParams.sanitizeOption.removalEnabled);
 			}
+
+			if (response.redirectURL) {
+				response.redirectURL = HashUtils.hashRemoveUrlParams(response.redirectURL,
+					sanitizeList.queryStringParams.sanitizeList,
+					sanitizeList.queryStringParams.sanitizeOption.hashEnabled,
+					sanitizeList.queryStringParams.sanitizeOption.removalEnabled);
+			}
+
+			entries[entry].request = request;
+			entries[entry].response = response;
+			entries[entry]._initiator = initiator;
 		}
 		for (let i in pages) {
-			if (pages[i].title.includes("id_token_hint")) {
-				const sanitizedIDtokenPageTitle = HashUtils.hashRemoveUrlParams(
+			if (pages[i].title) {
+				pages[i].title = HashUtils.hashRemoveUrlParams(
 					pages[i].title,
 					sanitizeList.queryStringParams.sanitizeList,
-					sanitizeList.queryStringParams.sanitizeOption.hashEnabled
+					sanitizeList.queryStringParams.sanitizeOption.hashEnabled,
+					sanitizeList.queryStringParams.sanitizeOption.removalEnabled,
+
 				);
-				pages[i].title = sanitizedIDtokenPageTitle;
 			}
 		}
 
 		harcontent.log.entries = entries;
 		harcontent.log.pages = pages;
+		console.log(harcontent);
 		setdownloadJsonHarJsonHar(harcontent);
 		return harcontent;
 	};
@@ -283,7 +301,7 @@ function App() {
 				</h1>
 			</div>
 			<div className="flex flex-col max-w-2xl mx-auto">
-				<div id="fileUpload">
+				<div id="fileUpload" className="m-2">
 					<FileInput
 						id="file"
 						helperText="Upload the HAR File for sanitization"
@@ -295,13 +313,14 @@ function App() {
 							)
 						}
 					/>
+					<br />
 					{harError && (
 						<p className="mt-2 text-sm text-red-600 dark:text-red-500">
 							{harError}
 						</p>
 					)}
 				</div>
-				<div className="self-end">
+				<div className="self-end m-2">
 					{jsonHar ? (
 						<button
 							type="button"

@@ -5,44 +5,15 @@ import * as HashUtils from "./Utils/hash";
 import { removeCookies, removeHashSensitiveInfoText } from "./Utils/removeInfo";
 import { HarParam } from "./Utils/hash";
 import { SanitizeSelector } from "./SanitizingSelector";
-
-export interface SanitizeOption {
-	hashEnabled: boolean;
-	removalEnabled: boolean;
-}
-
-export type SanitizeState = Record<
-	string,
-	{ sanitizeOption: SanitizeOption; sanitizeList: Record<string, boolean> }
->;
-
-export const defaultSensitiveInfoList = [
-	"Authorization",
-	"access_token",
-	"appID",
-	"assertion",
-	"code",
-	"email",
-	"id_token",
-	"password",
-	"commonAuthId",
-	"opbs",
-	"JSESSIONID",
-	"Set-Cookie",
-	"Cookie",
-	"id_token_hint",
-	"SAMLRequest",
-	"SAMLResponse",
-	"Location"
-];
-
-export const defaultSelectedSanitizeList = [...defaultSensitiveInfoList];
+import { DescriptionConstant } from "./Utils/Constants";
+import { SanitizeState, defaultSelectedSanitizeList } from "./Utils/SanitizeTypes";
 
 function App() {
+
 	const fileReader = new FileReader();
 	const [fileName, setFileName] = useState<string>();
-	const [jsonHar, setJsonHar] = useState<string>();
-	const [downloadJsonHar, setdownloadJsonHarJsonHar] = useState<any>();
+	const [jsonHar, setJsonHar] = useState<string>('');
+	const [downloadJsonHar, setdownloadJsonHar] = useState<any>();
 	const [harError, setHarError] = useState<string>("");
 
 	const defaultSanitizeList: SanitizeState = {
@@ -68,6 +39,7 @@ function App() {
 		useState<SanitizeState>(defaultSanitizeList);
 
 	const handleFileChosen = (file: any) => {
+
 		try {
 			setFileName(file.name);
 			fileReader.onloadend = handleFileRead;
@@ -75,11 +47,12 @@ function App() {
 		} catch (e) {
 			setJsonHar('');
 			setSanitizeList({});
-			setHarError(`Please select a HAR File`);
+			setHarError("Please select a HAR File");
 		}
 	};
 
 	const handleFileRead = (e: any) => {
+
 		try {
 			const content = fileReader.result;
 			if (
@@ -87,7 +60,7 @@ function App() {
 				(typeof content === "string" || content instanceof String)
 			) {
 				var harcontent = JSON.parse(content as string);
-				setdownloadJsonHarJsonHar(harcontent);
+				setdownloadJsonHar(harcontent);
 				setSanitizeList(getSanitizeItems(harcontent));
 				setJsonHar(JSON.stringify(harcontent));
 				setHarError("");
@@ -95,14 +68,14 @@ function App() {
 			}
 			throw new Error("File Upload failed");
 		} catch (e) {
-			console.log(e);
 			setJsonHar('');
 			setSanitizeList({});
-			setHarError(`Invalid har file`);
+			setHarError("Invalid har file");
 		}
 	};
 
 	function getHarParamsArr(harcontent: any) {
+
 		const harParamsArr = {
 			headers: new Set<string>(),
 			queryStringParams: new Set<string>(),
@@ -111,6 +84,7 @@ function App() {
 		};
 
 		const entries = harcontent.log.entries;
+
 		for (let i in entries) {
 			let request = entries[i].request;
 			request.headers.map((header: HarParam) =>
@@ -131,6 +105,7 @@ function App() {
 			}
 
 			let response = entries[i].response;
+
 			response.headers.map((header: HarParam) =>
 				harParamsArr.headers.add(header.name)
 			);
@@ -148,12 +123,14 @@ function App() {
 	}
 
 	function getSanitizeItems(harcontent: string): SanitizeState {
+
 		const sanitizeItems = getHarParamsArr(harcontent);
 		const output = { ...defaultSanitizeList };
+
 		Object.entries(sanitizeItems).map(([key, items]: [string, string[]]) => {
 			output[key].sanitizeList = items.reduce((acc, curr) => {
 				if (!curr) return acc;
-				if (key == "cookies") {
+				if (key == DescriptionConstant.COOKIES) {
 					acc[curr] = true;
 				} else {
 					acc[curr] = defaultSelectedSanitizeList.includes(curr);
@@ -165,7 +142,7 @@ function App() {
 	}
 
 	const sanitizeSensitiveInfo = (harcontent: any) => {
-		let sanitizedOutput = getSanitizeItems(harcontent);
+
 		const entries = harcontent.log.entries;
 		const pages = harcontent.log.pages;
 
@@ -215,6 +192,7 @@ function App() {
 			}
 
 			if (request.postData) {
+				console.log(request);
 				request.postData.text = removeHashSensitiveInfoText(
 					request.postData.text,
 					sanitizeList.postData.sanitizeList,
@@ -272,7 +250,7 @@ function App() {
 		harcontent.log.entries = entries;
 		harcontent.log.pages = pages;
 		console.log(harcontent);
-		setdownloadJsonHarJsonHar(harcontent);
+		setdownloadJsonHar(harcontent);
 		return harcontent;
 	};
 
@@ -285,7 +263,7 @@ function App() {
 			type: "application/json",
 		});
 		element.href = URL.createObjectURL(file);
-		element.download = "sanitized_"+fileName;
+		element.download = DescriptionConstant.SANITIZED + fileName;
 		document.body.appendChild(element);
 		element.click();
 		// clean up "a" element & remove ObjectURL

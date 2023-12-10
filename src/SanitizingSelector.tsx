@@ -1,27 +1,14 @@
 import { ElementRef, useRef, useState } from "react";
-import { SanitizeState } from "./App";
 import { Accordion } from 'flowbite-react';
+import { SanitizeState } from "./Utils/SanitizeTypes";
+import { mapDefaultSanitizeList, mapHeading } from "./Utils/Mapper";
+import { DescriptionConstant, SanitizePropertyConstant, UtilConstant } from "./Utils/Constants";
+import { About } from "./About";
 
 type SanitizeSelectorProps = {
 	sanitizeItems: SanitizeState;
 	setSanitizeItems: (value: SanitizeState) => void;
-	jsonHar: string | undefined;
-};
-const mapHeading: Record<string, string> = {
-	cookies: "Cookies",
-	headers: "Headers",
-	postData: "Post Body Params",
-	queryStringParams: "Query String Parameters",
-};
-
-const mapDefaultSanitizeList: Record<string, string> = {
-	id_token_hint: "ID Token Hint:Token Signature removed",
-	SAMLRequest: "SAML Request:Request Token Signature removed",
-	SAMLResponse: "SAML Response:Response Token Signature removed",
-	Authorization: "JWT Token:Token Signature removed",
-	password: "Password:Removed",
-	code: "Authorization Code:Code Hashed",
-	Location: "Location:Sensitive information removed"
+	jsonHar: string;
 };
 
 export const SanitizeSelector: React.FC<SanitizeSelectorProps> = ({
@@ -29,13 +16,15 @@ export const SanitizeSelector: React.FC<SanitizeSelectorProps> = ({
 	setSanitizeItems,
 	jsonHar
 }) => {
+
 	const [sanitizeCookies, setSanitizeCookies] = useState<boolean>(true);
 
 	const retrieveHeading = (property: string, type: string) => {
+
 		const propertyDesc = property.split(":");
-		if (type == "Heading") {
+		if (type == DescriptionConstant.HEADING) {
 			return propertyDesc[0];
-		} else if (type == "SubHeading") {
+		} else if (type == DescriptionConstant.SUB_HEADING) {
 			return propertyDesc[1];
 		}
 	}
@@ -48,9 +37,11 @@ export const SanitizeSelector: React.FC<SanitizeSelectorProps> = ({
 		selectAllInput: HTMLInputElement,
 		sanitizeCookies: boolean
 	) => {
+
 		const updatedSanitizeList = { ...sanitizeItems };
 		const selectedParamList = { ...updatedSanitizeList[type].sanitizeList };
-		if (type == "cookies" && sanitizeCookies) {
+		if (type == DescriptionConstant.COOKIES || item == SanitizePropertyConstant.COOKIE || 
+			item == SanitizePropertyConstant.SET_COOKIE && sanitizeCookies) {
 			setSanitizeCookies(false);
 		}
 		selectedParamList[item] = status;
@@ -62,6 +53,7 @@ export const SanitizeSelector: React.FC<SanitizeSelectorProps> = ({
 	};
 
 	const handleAllCheckboxChange = (type: string, status: boolean) => {
+
 		const updatedSanitizeList = { ...sanitizeItems };
 		const selectedParamList = { ...updatedSanitizeList[type].sanitizeList };
 		Object.keys(selectedParamList).map(
@@ -75,12 +67,14 @@ export const SanitizeSelector: React.FC<SanitizeSelectorProps> = ({
 		console.log(sanitizeItems);
 		return <div></div>;
 	};
+
 	const handleSanitizeOption = (e: any) => {
+
 		const { name, value } = e.target;
-		if (value == "hash") {
+		if (value == UtilConstant.HASH) {
 			sanitizeItems[name].sanitizeOption.hashEnabled = true;
 			sanitizeItems[name].sanitizeOption.removalEnabled = false;
-		} else if (value == "remove") {
+		} else if (value == UtilConstant.REMOVE) {
 			sanitizeItems[name].sanitizeOption.removalEnabled = true;
 			sanitizeItems[name].sanitizeOption.hashEnabled = false;
 		}
@@ -92,17 +86,20 @@ export const SanitizeSelector: React.FC<SanitizeSelectorProps> = ({
 		item: string,
 		selectAllInput: HTMLInputElement
 	) => {
+
 		const updatedSanitizeList = { ...sanitizeItems };
 		const selectedParamList = { ...updatedSanitizeList[type].sanitizeList };
-		const selectedCookieParamList = { ...updatedSanitizeList["cookies"].sanitizeList };
-		if (item.toLowerCase() == "set-cookie") {
+		const selectedCookieParamList = { ...updatedSanitizeList[DescriptionConstant.COOKIES].sanitizeList };
+
+		if (item.toLowerCase() == DescriptionConstant.SET_COOKIE_LOWER) {
 			selectedParamList[item] = status;
-			selectedParamList["Cookie"] = status;
+			selectedParamList[SanitizePropertyConstant.COOKIE] = status;
 			Object.keys(selectedCookieParamList).map(
 				(item) => (selectedCookieParamList[item] = status)
 			);
+
 			updatedSanitizeList[type].sanitizeList = selectedParamList;
-			updatedSanitizeList["cookies"].sanitizeList = selectedCookieParamList;
+			updatedSanitizeList[DescriptionConstant.COOKIES].sanitizeList = selectedCookieParamList;
 			const values = Object.values(selectedCookieParamList);
 
 			selectAllInput.indeterminate =
@@ -110,29 +107,35 @@ export const SanitizeSelector: React.FC<SanitizeSelectorProps> = ({
 			setSanitizeCookies(status);
 
 		}
+
 		selectedParamList[item] = status;
 		updatedSanitizeList[type].sanitizeList = selectedParamList;
 		setSanitizeItems(updatedSanitizeList);
 	};
 
 	const renderDefaultSanitizeProperties = (sanitizeList: SanitizeState) => {
+
 		const uniqueDefParamList: any[] = [];
 		return Object.keys(sanitizeList).map(type => {
+
 			const items = sanitizeItems[type].sanitizeList;
 			const size = Object.keys(items).length;
+
 			if (size) {
 				return Object.entries(items).map(
 					([item, status]: [string, boolean]) => {
+
 						const paramKeys = Object.keys(
 							mapDefaultSanitizeList
 						);
-						const cookie = item.toLowerCase().includes("set-cookie");
+						const cookie = item.toLowerCase().includes(DescriptionConstant.SET_COOKIE_LOWER);
 
 						if (!uniqueDefParamList.includes(item) && paramKeys.includes(item)) {
 							uniqueDefParamList.push(item);
-							return (<><div className="flex items-center space-x-3 rtl:space-x-reverse">
+							return (<div className="flex items-center space-x-3 rtl:space-x-reverse" key={item + `property`}>
 								<div className="ml-6 mb-2">
 									<input
+										key={item + `checkbox`}
 										type="checkbox"
 										checked={status}
 										className="w-4 h-4 text-blue-900 bg-gray-100 border-gray-300 rounded 
@@ -140,7 +143,7 @@ export const SanitizeSelector: React.FC<SanitizeSelectorProps> = ({
 												focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
 										onChange={() => {
 											const selectAll = ref.current?.querySelector(
-												`#${`all-${type}`}`
+												`#${`${UtilConstant.ALL}-${type}`}`
 											);
 											if (selectAll instanceof HTMLInputElement) {
 												handleSanitizeByDefault(
@@ -153,18 +156,19 @@ export const SanitizeSelector: React.FC<SanitizeSelectorProps> = ({
 										}}
 									/>
 									<label className="ms-2 text-sm font-normal text-gray-900 dark:text-gray-300" key={item}>
-										{retrieveHeading(mapDefaultSanitizeList[item], "Heading")}
+										{retrieveHeading(mapDefaultSanitizeList[item], DescriptionConstant.HEADING)}
 									</label><br />
 									<p className="text-xs font-normal text-gray-500 dark:text-gray-300 ml-6">
-										{retrieveHeading(mapDefaultSanitizeList[item], "SubHeading")}
+										{retrieveHeading(mapDefaultSanitizeList[item], DescriptionConstant.SUB_HEADING)}
 									</p>
 
 								</div>
-							</div></>)
+							</div>)
 						} else if (cookie) {
-							return (<><div className="flex items-center space-x-3 rtl:space-x-reverse">
+							return (<div className="flex items-center space-x-3 rtl:space-x-reverse"  key ={`sanitize-all-cookies`}>
 								<div className="ml-6 mb-2">
 									<input
+										
 										type="checkbox"
 										checked={sanitizeCookies}
 										className="w-4 h-4 text-blue-900 bg-gray-100 border-gray-300 rounded 
@@ -172,7 +176,7 @@ export const SanitizeSelector: React.FC<SanitizeSelectorProps> = ({
 												focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
 										onChange={() => {
 											const selectAll = ref.current?.querySelector(
-												`#${`all-cookies`}`
+												`#${UtilConstant.ALL_COOKIES}`
 											);
 											if (selectAll instanceof HTMLInputElement) {
 												handleSanitizeByDefault(
@@ -193,16 +197,16 @@ export const SanitizeSelector: React.FC<SanitizeSelectorProps> = ({
 										All Cookies Hashed
 									</p>
 								</div>
-							</div></>)
+							</div>)
 						}
-
-					})
+					}
+				)
 			}
 		});
 	}
 
 	const ref = useRef<ElementRef<"div">>(null);
-	let selectAllValues = `all`;
+	let selectAllValues = UtilConstant.ALL;
 	return (
 		<div ref={ref}>
 			<div>
@@ -215,7 +219,6 @@ export const SanitizeSelector: React.FC<SanitizeSelectorProps> = ({
 						<div className="space-y-1 columns-1 lg:columns-2 xl:columns-3 px-2 ml-4 mr-4 pb-2 pt-2">
 							<div className="max-w-md space-y-1 text-gray-700 text-sm dark:text-gray-400">
 								{renderDefaultSanitizeProperties(sanitizeItems)}
-
 							</div>
 						</div>
 						<h3 className="text-2xl font-bold ml-4 mt-3">
@@ -228,19 +231,22 @@ export const SanitizeSelector: React.FC<SanitizeSelectorProps> = ({
 			</div>
 
 			{Object.keys(sanitizeItems).map((type) => {
+
 				const items = sanitizeItems[type].sanitizeList;
 				const selectedSanitizeOption = sanitizeItems[type].sanitizeOption;
-				selectAllValues = `all-${type}`;
+				selectAllValues = `${UtilConstant.ALL}-${type}`;
 				const size = Object.keys(items).length;
+
 				if (size) {
 					return (
-						<>
+						<div key={type}>
 							<Accordion collapseAll className="m-4">
-								<Accordion.Panel isOpen={true}>
+								<Accordion.Panel>
 									<Accordion.Title>
-										<h1 className="font-semibold text-gray-800 dark:text-gray-400">{mapHeading[type]}</h1>
-
-										<h2 className="text-xs font-normal text-gray-500 dark:text-gray-300">Click here to view advanced configuration </h2></Accordion.Title>
+										<div className="font-semibold text-gray-800 dark:text-gray-400">{mapHeading[type]}</div>
+										<div className="text-xs font-normal text-gray-500 dark:text-gray-300">
+										    Click here to view advanced configuration </div>
+									</Accordion.Title>
 
 									<Accordion.Content>
 										<div className="flex ml-4">
@@ -286,7 +292,7 @@ export const SanitizeSelector: React.FC<SanitizeSelectorProps> = ({
 												</label>
 											</div>
 										</div>
-										<div className="ml-6 mb-2">
+										<div className="ml-6 mb-2" key={selectAllValues+`checkbox`}>
 											<input
 												id={selectAllValues}
 												type="checkbox"
@@ -308,16 +314,17 @@ export const SanitizeSelector: React.FC<SanitizeSelectorProps> = ({
 										>
 											{Object.entries(items).map(
 												([item, status]: [string, boolean]) => {
+													
 													const paramKeys = Object.keys(
 														mapDefaultSanitizeList
 													);
-													const cookie = item.toLowerCase().includes("cookie");
+													const cookie = item.toLowerCase().includes(SanitizePropertyConstant.COOKIE);
 
 													if (!paramKeys.includes(item) || cookie) {
 
 														return (
-															<div key={item}>
-																<input
+															<div key={item +`property`}>
+																<input key={item}
 																	type="checkbox"
 																	checked={status}
 																	className="w-4 h-4 text-blue-900 bg-gray-100 border-gray-300 rounded 
@@ -353,29 +360,11 @@ export const SanitizeSelector: React.FC<SanitizeSelectorProps> = ({
 									</Accordion.Content>
 								</Accordion.Panel>
 							</Accordion>
-						</>
+						</div>
 					);
 				}
 			})}
-			<div
-				key="footer"
-				className="mt-10 ml-4 mr-10 text-gray-500 dark:text-gray-400 mb-10"
-			>
-				<div>
-					<h1 className="text-2xl font-bold mt-5 text-gray-700">
-						Introducing the <span className="text-orange-500 dark:text-blue-500">HAR File Sanitizer Tool </span>
-						- Secure Troubleshooting Made Easy for Web-Related Issues!
-					</h1>
-					<p className="mt-2 dark:text-gray-400">
-						When you encounter issues with websites, providing network traces becomes crucial for troubleshooting.
-						However, these traces might contain sensitive info like passwords and API keys, posing security risks.
-						The HAR Sanitizer tool sanitizes sensitive data providing the capability to hash or remove entirely from your network traces,
-						ensuring your session cookies, authorization headers, and more stay private.
-						It works using client-side logic to sanitize HAR files, allowing you to share troubleshooting data without compromising security.
-						Embrace a worry-free online experience with our commitment to building a safer Digital Realm!
-					</p>
-				</div>
-			</div>
+			<About/>
 			<div>{printUpdated()}</div>
 		</div>
 	);

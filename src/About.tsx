@@ -2,7 +2,7 @@ export function About() {
     return (
         <div
         key="footer"
-        className="mt-10 ml-4 mr-10 text-gray-500 dark:text-gray-400 mb-10"
+        className="mt-10 ml-4 mr-10 text-gray-500 dark:text-gray-400 mb-2"
     >
         <div>
             <h1 className="text-2xl font-bold mt-5 text-gray-700">

@@ -1,5 +1,5 @@
 export const mapHeading: Record<string, string> = {
-    
+
 	cookies: "Cookies",
 	headers: "Headers",
 	postData: "Post Body Params",
@@ -14,5 +14,5 @@ export const mapDefaultSanitizeList: Record<string, string> = {
 	Authorization: "JWT Token:Token Signature removed",
 	password: "Password:Removed",
 	code: "Authorization Code:Code Hashed",
-	Location: "Location:Sensitive information removed"
+	Location: "Location Header:Sensitive information removed"
 };

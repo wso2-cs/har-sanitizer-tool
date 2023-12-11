@@ -155,10 +155,10 @@ export const SanitizeSelector: React.FC<SanitizeSelectorProps> = ({
 											}
 										}}
 									/>
-									<label className="ms-2 text-sm font-normal text-gray-900 dark:text-gray-300" key={item}>
+									<label className="ms-2 text-sm font-normal text-gray-600 dark:text-gray-300" key={item}>
 										{retrieveHeading(mapDefaultSanitizeList[item], DescriptionConstant.HEADING)}
 									</label><br />
-									<p className="text-xs font-normal text-gray-500 dark:text-gray-300 ml-6">
+									<p className="text-xs font-medium text-green-600 dark:text-green-200 ml-6">
 										{retrieveHeading(mapDefaultSanitizeList[item], DescriptionConstant.SUB_HEADING)}
 									</p>
 
@@ -190,10 +190,10 @@ export const SanitizeSelector: React.FC<SanitizeSelectorProps> = ({
 										}
 
 									/>
-									<label className="ms-2 text-sm font-normal text-gray-900 dark:text-gray-300" key={item}>
+									<label className="ms-2 text-sm font-normal text-gray-600 dark:text-gray-300" key={item}>
 										Cookies
 									</label><br />
-									<p className="text-xs font-normal text-gray-500 dark:text-gray-300 ml-6">
+									<p className="text-xs font-medium text-green-600 dark:text-gray-300 ml-6">
 										All Cookies Hashed
 									</p>
 								</div>
@@ -364,7 +364,6 @@ export const SanitizeSelector: React.FC<SanitizeSelectorProps> = ({
 					);
 				}
 			})}
-			<About/>
 			<div>{printUpdated()}</div>
 		</div>
 	);

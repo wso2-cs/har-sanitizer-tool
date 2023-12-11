@@ -7,6 +7,7 @@ import { HarParam } from "./Utils/hash";
 import { SanitizeSelector } from "./SanitizingSelector";
 import { DescriptionConstant } from "./Utils/Constants";
 import { SanitizeState, defaultSelectedSanitizeList } from "./Utils/SanitizeTypes";
+import { About } from "./About";
 
 function App() {
 
@@ -303,23 +304,31 @@ function App() {
 					{jsonHar ? (
 						<button
 							type="button"
-							className="object-right text-white bg-gray-800 hover:bg-gray-900 focus:outline-none focus:ring-4 
-              focus:ring-gray-300 font-medium rounded-lg text-sm px-5 py-2.5 mb-2 
-              dark:bg-gray-800 dark:hover:bg-gray-700 dark:focus:ring-gray-700 dark:border-gray-700"
+							className="object-right text-white bg-gray-800 hover:bg-gray-600 focus:outline-none focus:ring-4 
+							focus:ring-gray-300 font-medium rounded-lg text-sm px-20 py-5 mb-2 
+							dark:bg-gray-800 dark:hover:bg-gray-700 dark:focus:ring-gray-700 dark:border-gray-700"
 							onClick={(e) => downloadTxtFile()}
 						>
-							Download
+							Download Sanatized File
 						</button>
 					) : null}
 				</div>
 			</div>
-			<div>
-				<SanitizeSelector
-					sanitizeItems={sanitizeList}
-					setSanitizeItems={setSanitizeList}
-					jsonHar={jsonHar}
-				></SanitizeSelector>
-			</div>
+			<About/>
+
+			<SanitizeSelector
+				sanitizeItems={sanitizeList}
+				setSanitizeItems={setSanitizeList}
+				jsonHar={jsonHar}
+			></SanitizeSelector>
+
+			<footer className="bg-black dark:bg-gray-900">
+				<div className="w-full max-w-screen-xl mx-auto p-4 md:py-8">
+					<hr className="my-6 border-gray-200 sm:mx-auto dark:border-gray-700 lg:my-8" />
+					<span className="block text-sm text-white sm:text-center dark:text-white-400">© 2023 <a href=""
+					className="hover:underline"></a>All Rights Reserved</span>
+				</div>
+			</footer>
 		</div>
 	);
 }

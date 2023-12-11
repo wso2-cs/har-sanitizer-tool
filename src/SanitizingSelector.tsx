@@ -3,7 +3,6 @@ import { Accordion } from 'flowbite-react';
 import { SanitizeState } from "./Utils/SanitizeTypes";
 import { mapDefaultSanitizeList, mapHeading } from "./Utils/Mapper";
 import { DescriptionConstant, SanitizePropertyConstant, UtilConstant } from "./Utils/Constants";
-import { About } from "./About";
 
 type SanitizeSelectorProps = {
 	sanitizeItems: SanitizeState;

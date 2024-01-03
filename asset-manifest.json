@@ -1,0 +1,15 @@
+{
+  "files": {
+    "main.css": "/har-sanitizer-tool/static/css/main.12f7e9a8.css",
+    "main.js": "/har-sanitizer-tool/static/js/main.e6d2586f.js",
+    "static/js/787.5684d8c0.chunk.js": "/har-sanitizer-tool/static/js/787.5684d8c0.chunk.js",
+    "index.html": "/har-sanitizer-tool/index.html",
+    "main.12f7e9a8.css.map": "/har-sanitizer-tool/static/css/main.12f7e9a8.css.map",
+    "main.e6d2586f.js.map": "/har-sanitizer-tool/static/js/main.e6d2586f.js.map",
+    "787.5684d8c0.chunk.js.map": "/har-sanitizer-tool/static/js/787.5684d8c0.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.12f7e9a8.css",
+    "static/js/main.e6d2586f.js"
+  ]
+}
